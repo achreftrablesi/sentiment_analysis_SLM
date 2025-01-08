@@ -175,7 +175,7 @@ def run_experiment(
     test_cases = [
         {
             "input": item["review"],
-            "label": "positive" if item["label"] == 1 else "negative",
+            "label": "positive" if item["label"] == 0 else "negative",
         }
         for item in dataset
     ]
