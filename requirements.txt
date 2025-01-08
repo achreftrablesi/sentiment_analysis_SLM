@@ -1,0 +1,3 @@
+scikit-learn
+llama-cpp-python
+datasets
