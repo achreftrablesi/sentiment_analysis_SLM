@@ -44,4 +44,4 @@ TOP_P = 0.9
 TOP_K = 50
 
 # Context Window
-n_ctx = 4096
+n_ctx = 16384
