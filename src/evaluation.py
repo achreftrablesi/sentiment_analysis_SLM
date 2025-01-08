@@ -1,60 +1,116 @@
 """
 Evaluation module for the sentiment analysis project.
 """
-
-from sklearn.metrics import accuracy_score
+from typing import List, Dict
+from time import time
+from dataclasses import dataclass
+from statistics import mean, stdev
+from sklearn.metrics import accuracy_score, confusion_matrix
 from src.config import logger
 
 
-def evaluate_results(results):
+@dataclass
+class PredictionResult:
+    """Data class to store prediction results with timing information."""
+    input_text: str
+    true_label: str
+    predicted_label: str
+    response_time: float  # in seconds
+
+
+def evaluate_model_performance(results: List[PredictionResult]) -> Dict:
     """
-    Evaluate model predictions against ground truth labels.
+    Calculate comprehensive evaluation metrics including timing statistics.
 
     Args:
-        results (list): List of dictionaries containing predictions and labels
+        results: List of PredictionResult objects containing predictions and timing info
 
     Returns:
-        dict: Dictionary containing evaluation metrics
+        Dict containing various evaluation metrics
     """
+    # Extract predictions and labels
+    predictions = [r.predicted_label for r in results]
+    true_labels = [r.true_label for r in results]
+    response_times = [r.response_time for r in results]
 
-    predictions = [r["prediction"] for r in results]
-    labels = [r["label"] for r in results]
-    accuracy = accuracy_score(labels, predictions)
-    return {"accuracy": accuracy}
+    # Calculate confusion matrix
+    tn, fp, fn, tp = confusion_matrix(true_labels, predictions, labels=["negative", "positive"]).ravel()
+
+    # Timing statistics
+    avg_response_time = mean(response_times)
+    std_response_time = stdev(response_times) if len(response_times) > 1 else 0
+    max_response_time = max(response_times)
+    min_response_time = min(response_times)
+
+    metrics = {
+        "accuracy": accuracy_score(true_labels, predictions),
+        "true_positives": tp,
+        "true_negatives": tn,
+        "false_positives": fp,
+        "false_negatives": fn,
+        "timing": {
+            "average_response_time": avg_response_time,
+            "std_response_time": std_response_time,
+            "max_response_time": max_response_time,
+            "min_response_time": min_response_time,
+            "total_inference_time": sum(response_times)
+        }
+    }
+
+    return metrics
+
+
+def print_evaluation_report(metrics: Dict) -> None:
+    """
+    Print a detailed evaluation report.
+
+    Args:
+        metrics: Dictionary containing evaluation metrics
+    """
+    logger.info("\n=== Model Evaluation Report ===")
+    
+    # Classification metrics
+    logger.info("\nClassification Metrics:")
+    logger.info(f"Accuracy: {metrics['accuracy']:.2%}")
+    logger.info(f"True Positives: {metrics['true_positives']}")
+    logger.info(f"True Negatives: {metrics['true_negatives']}")
+    logger.info(f"False Positives: {metrics['false_positives']}")
+    logger.info(f"False Negatives: {metrics['false_negatives']}")
+
+    # Timing metrics
+    logger.info("\nTiming Metrics:")
+    logger.info(f"Average Response Time: {metrics['timing']['average_response_time']:.3f} seconds")
+    logger.info(f"Response Time Std Dev: {metrics['timing']['std_response_time']:.3f} seconds")
+    logger.info(f"Fastest Response: {metrics['timing']['min_response_time']:.3f} seconds")
+    logger.info(f"Slowest Response: {metrics['timing']['max_response_time']:.3f} seconds")
+    logger.info(f"Total Inference Time: {metrics['timing']['total_inference_time']:.3f} seconds")
 
 
 if __name__ == "__main__":
-    # Predefined test cases with known labels
-    test_cases = [
-        {
-            "input": "This movie was absolutely fantastic! The acting was superb and the plot kept me engaged throughout.",
-            "prediction": "positive",
-            "label": "positive",
-        },
-        {
-            "input": "What a waste of time. Terrible acting, boring story, I couldn't wait for it to end.",
-            "prediction": "negative",
-            "label": "negative",
-        },
-        {
-            "input": "It was okay, not great but not terrible either. Some good moments but overall pretty average.",
-            "prediction": "neutral",
-            "label": "neutral",
-        },
+    # Example usage with timing information
+    test_results = [
+        PredictionResult(
+            input_text="This movie was fantastic!",
+            true_label="positive",
+            predicted_label="positive",
+            response_time=0.5
+        ),
+        PredictionResult(
+            input_text="Terrible waste of time.",
+            true_label="negative",
+            predicted_label="negative",
+            response_time=0.4
+        ),
+        PredictionResult(
+            input_text="I hated this movie.",
+            true_label="negative",
+            predicted_label="positive",
+            response_time=0.6
+        )
     ]
 
-    # Test the evaluation function
-    metrics = evaluate_results(test_cases)
-
-    # Print results
-    logger.info("\nEvaluation Results:")
-    logger.info(f"Accuracy: {metrics['accuracy']:.2%}")
-
-    # Print detailed comparison
-    logger.info("\nDetailed Comparison:")
-    for i, case in enumerate(test_cases, 1):
-        logger.info(f"\nTest {i}:")
-        logger.info(f"Input: {case['input']}")
-        logger.info(f"Prediction: {case['prediction']}")
-        logger.info(f"True Label: {case['label']}")
-        logger.info(f"Correct: {'✓' if case['prediction'] == case['label'] else '✗'}")
+    # Calculate metrics
+    evaluation_metrics = evaluate_model_performance(test_results)
+    
+    # Print detailed report
+    print_evaluation_report(evaluation_metrics)
