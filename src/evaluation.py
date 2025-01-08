@@ -12,6 +12,7 @@ from src.config import logger
 @dataclass
 class PredictionResult:
     """Data class to store prediction results with timing information."""
+
     input_text: str
     true_label: str
     predicted_label: str
@@ -34,7 +35,9 @@ def evaluate_model_performance(results: List[PredictionResult]) -> Dict:
     response_times = [r.response_time for r in results]
 
     # Calculate confusion matrix
-    tn, fp, fn, tp = confusion_matrix(true_labels, predictions, labels=["negative", "positive"]).ravel()
+    tn, fp, fn, tp = confusion_matrix(
+        true_labels, predictions, labels=["negative", "positive"]
+    ).ravel()
 
     # Timing statistics
     avg_response_time = mean(response_times)
@@ -49,12 +52,12 @@ def evaluate_model_performance(results: List[PredictionResult]) -> Dict:
         "false_positives": fp,
         "false_negatives": fn,
         "timing": {
-            "average_response_time": avg_response_time,
-            "std_response_time": std_response_time,
-            "max_response_time": max_response_time,
-            "min_response_time": min_response_time,
-            "total_inference_time": sum(response_times)
-        }
+            "average_response_time": round(avg_response_time, 3),
+            "std_response_time": round(std_response_time, 3),
+            "max_response_time": round(max_response_time, 3),
+            "min_response_time": round(min_response_time, 3),
+            "total_inference_time": round(sum(response_times), 3),
+        },
     }
 
     return metrics
@@ -68,7 +71,7 @@ def print_evaluation_report(metrics: Dict) -> None:
         metrics: Dictionary containing evaluation metrics
     """
     logger.info("\n=== Model Evaluation Report ===")
-    
+
     # Classification metrics
     logger.info("\nClassification Metrics:")
     logger.info(f"Accuracy: {metrics['accuracy']:.2%}")
@@ -79,11 +82,21 @@ def print_evaluation_report(metrics: Dict) -> None:
 
     # Timing metrics
     logger.info("\nTiming Metrics:")
-    logger.info(f"Average Response Time: {metrics['timing']['average_response_time']:.3f} seconds")
-    logger.info(f"Response Time Std Dev: {metrics['timing']['std_response_time']:.3f} seconds")
-    logger.info(f"Fastest Response: {metrics['timing']['min_response_time']:.3f} seconds")
-    logger.info(f"Slowest Response: {metrics['timing']['max_response_time']:.3f} seconds")
-    logger.info(f"Total Inference Time: {metrics['timing']['total_inference_time']:.3f} seconds")
+    logger.info(
+        f"Average Response Time: {metrics['timing']['average_response_time']:.3f} seconds"
+    )
+    logger.info(
+        f"Response Time Std Dev: {metrics['timing']['std_response_time']:.3f} seconds"
+    )
+    logger.info(
+        f"Fastest Response: {metrics['timing']['min_response_time']:.3f} seconds"
+    )
+    logger.info(
+        f"Slowest Response: {metrics['timing']['max_response_time']:.3f} seconds"
+    )
+    logger.info(
+        f"Total Inference Time: {metrics['timing']['total_inference_time']:.3f} seconds"
+    )
 
 
 if __name__ == "__main__":
@@ -93,24 +106,24 @@ if __name__ == "__main__":
             input_text="This movie was fantastic!",
             true_label="positive",
             predicted_label="positive",
-            response_time=0.5
+            response_time=0.5,
         ),
         PredictionResult(
             input_text="Terrible waste of time.",
             true_label="negative",
             predicted_label="negative",
-            response_time=0.4
+            response_time=0.4,
         ),
         PredictionResult(
             input_text="I hated this movie.",
             true_label="negative",
             predicted_label="positive",
-            response_time=0.6
-        )
+            response_time=0.6,
+        ),
     ]
 
     # Calculate metrics
     evaluation_metrics = evaluate_model_performance(test_results)
-    
+
     # Print detailed report
     print_evaluation_report(evaluation_metrics)
