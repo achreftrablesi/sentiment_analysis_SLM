@@ -3,7 +3,11 @@ Simple Streamlit app for sentiment analysis.
 """
 import streamlit as st
 from src.models import load_model
-from src.config import TEMPERATURE, MAX_TOKENS, CLASSIFIER_PROMPT, USER_PROMPT
+from src.config import (
+    TEMPERATURE, MAX_TOKENS, 
+    CLASSIFIER_PROMPT_0_5B, CLASSIFIER_PROMPT_1_5B,
+    USER_PROMPT
+)
 
 MODEL_MAPPING = {
     "Fast & Compact (0.5B)": "0.5B",
@@ -12,13 +16,14 @@ MODEL_MAPPING = {
 
 def analyze_sentiment(model_size: str, text: str) -> str:
     """Run sentiment analysis on a single review."""
-    
+    # Select the appropriate prompt based on model size
+    classifier_prompt = CLASSIFIER_PROMPT_1_5B if MODEL_MAPPING[model_size] == "1.5B" else CLASSIFIER_PROMPT_0_5B
     
     # Load model and run prediction
     model = load_model(MODEL_MAPPING[model_size])
     response = model.create_chat_completion(
         messages=[
-            {"role": "system", "content": CLASSIFIER_PROMPT},
+            {"role": "system", "content": classifier_prompt},
             {"role": "user", "content": USER_PROMPT.format(review=text)},
         ],
         temperature=TEMPERATURE,
