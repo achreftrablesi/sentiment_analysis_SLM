@@ -3,7 +3,7 @@ Inference module for the sentiment analysis project.
 """
 
 from src.models import load_model
-from src.config import CLASSIFIER_PROMPT, TEMPERATURE, USER_PROMPT, logger
+from src.config import CLASSIFIER_PROMPT_0_5B, TEMPERATURE, USER_PROMPT, logger
 
 
 def run_inference(model, messages):
@@ -22,7 +22,7 @@ def run_inference(model, messages):
         response = model.create_chat_completion(
             temperature=TEMPERATURE,
             messages=[
-                {"role": "system", "content": CLASSIFIER_PROMPT},
+                {"role": "system", "content": CLASSIFIER_PROMPT_0_5B},
                 {"role": "user", "content": USER_PROMPT.format(review=message)},
             ],
         )
@@ -38,8 +38,8 @@ if __name__ == "__main__":
         "What a waste of time. Terrible acting, boring story, I couldn't wait for it to end.",
         "It was okay, not great but not terrible either. Some good moments but overall pretty average.",
     ]
-
-    model = load_model("1.5B")
+    # for the sake of simplicity, we are using the 0.5B model for inference
+    model = load_model("0.5B")
     results = run_inference(model, test_messages)
 
     # Print results in a readable format
