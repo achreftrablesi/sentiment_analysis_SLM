@@ -40,7 +40,6 @@ This repository contains a project for analyzing movie reviews' sentiment using 
 - **`main.py`**: A Streamlit-based web interface for users to interact with the models and analyze review sentiments.
 - **`requirements.txt`**: Lists the Python libraries required to run the project.
 - **`run.sh`**: A setup and execution script for initializing the environment and launching the app.
-- **`sentiment_analysis.log`**: Log file for debugging and tracking.
 
 ---
 
