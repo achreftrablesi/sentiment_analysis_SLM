@@ -2,11 +2,12 @@
 Models module for the sentiment analysis project.
 """
 
+import argparse
 from llama_cpp import Llama
 from src.config import logger, n_ctx
 
 
-def load_model(size: str):
+def load_model(size: str) -> Llama:
     """
     Load the Qwen model based on the size specification with increased context window.
 
@@ -36,6 +37,27 @@ def load_model(size: str):
     return model
 
 
+def parse_args() -> argparse.Namespace:
+    """
+    Parse command line arguments.
+
+    Returns:
+        argparse.Namespace: Parsed command line arguments
+    """
+    parser = argparse.ArgumentParser(
+        description="Load and initialize Qwen model for sentiment analysis"
+    )
+    parser.add_argument(
+        "--size",
+        type=str,
+        choices=["0.5B", "1.5B"],
+        default="0.5B",
+        help="Model size to load (0.5B or 1.5B)"
+    )
+    return parser.parse_args()
+
+
 if __name__ == "__main__":
-    model = load_model("0.5B")
+    args = parse_args()
+    model = load_model(args.size)
     print(model)
