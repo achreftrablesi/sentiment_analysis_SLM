@@ -194,7 +194,7 @@ def run_experiment(
             results[model_size] = run_model_evaluation(
                 model_size,
                 test_cases,
-                get_experiment_config("prompt", "basic")["system"],
+                get_experiment_config("prompt", "CoT_few_shot")["system"],
                 config
             )
 
@@ -228,8 +228,8 @@ def main():
     parser.add_argument(
         "--sample-size",
         type=int,
-        default=50,
-        help="Number of samples to use (default: 50)"
+        default=100,
+        help="Number of samples to use (default: 100)"
     )
 
     args = parser.parse_args()
