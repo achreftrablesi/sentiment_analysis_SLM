@@ -1,66 +1,89 @@
 """
-Main module for sentiment analysis inference.
+Simple Streamlit app for sentiment analysis.
 """
-import argparse
-from time import time
+import streamlit as st
 from src.models import load_model
-from src.config import CLASSIFIER_PROMPT, USER_PROMPT, logger
+from src.config import TEMPERATURE, MAX_TOKENS, CLASSIFIER_PROMPT, USER_PROMPT
 
+MODEL_MAPPING = {
+    "Fast & Compact (0.5B)": "0.5B",
+    "Strong & Capable (1.5B)": "1.5B"
+}
 
-def analyze_sentiment(review_text: str, model_size: str = "1.5B") -> dict:
-    """
-    Analyze the sentiment of a single movie review.
-
-    Args:
-        review_text: The movie review text to analyze
-        model_size: Size of the model to use ('0.5B' or '1.5B')
-
-    Returns:
-        Dict containing the prediction and response time
-    """
-    # Load model
-    logger.info(f"Loading {model_size} model...")
-    model = load_model(model_size)
-
-    # Run inference with timing
-    start_time = time()
+def analyze_sentiment(model_size: str, text: str) -> str:
+    """Run sentiment analysis on a single review."""
+    
+    
+    # Load model and run prediction
+    model = load_model(MODEL_MAPPING[model_size])
     response = model.create_chat_completion(
         messages=[
             {"role": "system", "content": CLASSIFIER_PROMPT},
-            {"role": "user", "content": USER_PROMPT.format(review=review_text)},
+            {"role": "user", "content": USER_PROMPT.format(review=text)},
         ],
+        temperature=TEMPERATURE,
+        max_tokens=MAX_TOKENS
     )
-    inference_time = time() - start_time
-
-    prediction = response["choices"][0]["message"]["content"].strip().lower()
-
-    return {
-        "review": review_text,
-        "prediction": prediction,
-        "inference_time": inference_time
-    }
-
+    return response["choices"][0]["message"]["content"]
 
 def main():
-    parser = argparse.ArgumentParser(description="Analyze sentiment of a movie review")
-    parser.add_argument("review", type=str, help="Movie review text to analyze")
-    parser.add_argument(
-        "--model_size",
-        choices=["0.5B", "1.5B"],
-        default="1.5B",
-        help="Choose model size",
+    st.set_page_config(
+        page_title="Movie Review Sentiment Analysis",
+        layout="wide"
     )
-    args = parser.parse_args()
+    
+    # Custom CSS to improve appearance
+    st.markdown("""
+        <style>
+        .stTextArea textarea {
+            font-size: 1.1rem;
+            line-height: 1.5;
+        }
+        .sentiment-result {
+            font-size: 2.5rem;
+            padding: 20px;
+            border-radius: 10px;
+            background-color: #f0f2f6;
+            text-align: center;
+            margin-top: 20px;
+        }
+        </style>
+    """, unsafe_allow_html=True)
 
-    # Run analysis
-    result = analyze_sentiment(args.review, args.model_size)
+    st.title("Movie Review Sentiment Analysis")
 
-    # Print results
-    logger.info("\nSentiment Analysis Results:")
-    logger.info(f"Review: {result['review']}")
-    logger.info(f"Sentiment: {result['prediction']}")
-    logger.info(f"Processing Time: {result['inference_time']:.3f} seconds")
+    col1, col2 = st.columns(2)
 
+    with col1:
+        # Model selection with descriptions
+        model_size = st.selectbox(
+            "Select Model",
+            options=list(MODEL_MAPPING.keys()),
+            help="Choose between a faster but simpler model or a more capable but slower one"
+        )
+        
+        # Review input
+        review = st.text_area(
+            "Enter movie review:",
+            height=300,
+            placeholder="Type or paste your movie review here..."
+        )
+
+    with col2:
+        st.markdown("### Sentiment Analysis Result")
+        if review:
+            try:
+                with st.spinner("Analyzing sentiment..."):
+                    sentiment = analyze_sentiment(model_size, review)
+                st.markdown(f"""
+                    <div class="sentiment-result">
+                        {sentiment.upper()}
+                    </div>
+                """, unsafe_allow_html=True)
+            except Exception as e:
+                st.error(f"Error analyzing sentiment: {str(e)}")
+        else:
+            st.info("Enter a review on the left to see the sentiment analysis result.")
 
 if __name__ == "__main__":
     main()
