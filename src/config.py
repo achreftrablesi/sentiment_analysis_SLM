@@ -62,7 +62,7 @@ USER_PROMPT = """
 """
 
 # Inference Parameters
-TEMPERATURE = 0.2
+TEMPERATURE = 0.0
 MAX_TOKENS = 128
 
 
