@@ -101,7 +101,7 @@ PROMPT_EXPERIMENTS: Dict[str, Dict] = {
     },
 }
 
-# Inference parameter configurations : 
+# Inference parameter configurations :
 
 INFERENCE_EXPERIMENTS: Dict[str, Dict] = {
     "default": {
@@ -111,7 +111,7 @@ INFERENCE_EXPERIMENTS: Dict[str, Dict] = {
     "strict": {
         "temperature": 0.0,
         "description": "More deterministic parameters",
-    }
+    },
 }
 
 

@@ -1,19 +1,19 @@
 """
 Main experiment runner for model comparisons.
 """
-from typing import List, Dict
-import json
-from pathlib import Path
-from datetime import datetime
-from time import time
 import argparse
+import json
+from datetime import datetime
+from pathlib import Path
+from time import time
+from typing import Dict, List
 
-from src.models import load_model
-from src.evaluation import PredictionResult, evaluate_model_performance
 from data.data_loader import load_dataset_subset
-from experiments.plot_metrics import create_experiment_visualizations
 from experiments.experiment_configs import get_experiment_config
+from experiments.plot_metrics import create_experiment_visualizations
 from src.config import logger
+from src.evaluation import PredictionResult, evaluate_model_performance
+from src.models import load_model
 
 
 def validate_prediction(prediction: str) -> str:
@@ -30,21 +30,18 @@ def validate_prediction(prediction: str) -> str:
         ValueError: If prediction is not exactly 'positive' or 'negative'
     """
     prediction = prediction.strip().lower()
-    
-    if prediction not in {'positive', 'negative'}:
+
+    if prediction not in {"positive", "negative"}:
         raise ValueError(
             f"Invalid prediction: '{prediction}'. "
             "Prediction must be exactly 'positive' or 'negative'"
         )
-    
+
     return prediction
 
 
 def run_model_evaluation(
-    model_size: str,
-    test_cases: List[Dict],
-    system_prompt: str,
-    inference_params: Dict
+    model_size: str, test_cases: List[Dict], system_prompt: str, inference_params: Dict
 ) -> Dict:
     """Run evaluation for a single model configuration."""
     logger.info(f"\nEvaluating {model_size} model...")
@@ -63,12 +60,12 @@ def run_model_evaluation(
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": case["input"]},
                 ],
-                **{k: v for k, v in inference_params.items() if k != "description"}
+                **{k: v for k, v in inference_params.items() if k != "description"},
             )
             inference_time = time() - start_time
 
             raw_prediction = response["choices"][0]["message"]["content"]
-            
+
             try:
                 prediction = validate_prediction(raw_prediction)
                 prediction_results.append(
@@ -76,43 +73,45 @@ def run_model_evaluation(
                         input_text=case["input"],
                         true_label=case["label"],
                         predicted_label=prediction,
-                        response_time=inference_time
+                        response_time=inference_time,
                     )
                 )
-            
+
             except ValueError as e:
-                invalid_predictions.append({
-                    "input": case["input"],
-                    "raw_prediction": raw_prediction,
-                    "error": str(e)
-                })
+                invalid_predictions.append(
+                    {
+                        "input": case["input"],
+                        "raw_prediction": raw_prediction,
+                        "error": str(e),
+                    }
+                )
                 logger.warning(f"Sample {i}: {str(e)}")
-                
+
         except Exception as e:
             logger.error(f"Error processing case {i}: {str(e)}")
-            invalid_predictions.append({
-                "input": case["input"],
-                "raw_prediction": "ERROR",
-                "error": str(e)
-            })
+            invalid_predictions.append(
+                {"input": case["input"], "raw_prediction": "ERROR", "error": str(e)}
+            )
 
     if not prediction_results:
         raise ValueError("No valid predictions were generated")
 
     metrics = evaluate_model_performance(prediction_results)
-    
+
     # Add invalid prediction information
     total_cases = len(test_cases)
     valid_cases = len(prediction_results)
     invalid_cases = len(invalid_predictions)
-    
+
     metrics["prediction_coverage"] = {
         "total_samples": total_cases,
         "valid_predictions": valid_cases,
         "invalid_predictions": invalid_cases,
         "coverage_percentage": (valid_cases / total_cases) * 100,
         "invalid_percentage": (invalid_cases / total_cases) * 100,
-        "invalid_examples": invalid_predictions[:10]  # Store first 10 invalid predictions as examples
+        "invalid_examples": invalid_predictions[
+            :10
+        ],  # Store first 10 invalid predictions as examples
     }
 
     return metrics
@@ -120,9 +119,11 @@ def run_model_evaluation(
 
 def save_experiment_results(results: Dict, experiment_info: Dict, output_dir: Path):
     """Save experiment results and configuration."""
+
     def convert_to_native_types(obj):
         """Convert numpy types to native Python types."""
         import numpy as np
+
         if isinstance(obj, np.integer):
             return int(obj)
         elif isinstance(obj, np.floating):
@@ -139,22 +140,22 @@ def save_experiment_results(results: Dict, experiment_info: Dict, output_dir: Pa
     converted_results = convert_to_native_types(results)
     converted_info = convert_to_native_types(experiment_info)
 
-    with open(output_dir / "results.json", 'w') as f:
-        json.dump({
-            **converted_info,
-            "results": converted_results,
-            "timestamp": datetime.now().isoformat()
-        }, f, indent=2)
+    with open(output_dir / "results.json", "w") as f:
+        json.dump(
+            {
+                **converted_info,
+                "results": converted_results,
+                "timestamp": datetime.now().isoformat(),
+            },
+            f,
+            indent=2,
+        )
 
 
-def run_experiment(
-    experiment_type: str,
-    experiment_name: str,
-    sample_size: int
-):
+def run_experiment(experiment_type: str, experiment_name: str, sample_size: int):
     """
     Run a specific experiment configuration.
-    
+
     Args:
         experiment_type: Type of experiment ('prompt' or 'params')
         experiment_name: Name of the specific experiment configuration
@@ -162,10 +163,10 @@ def run_experiment(
     """
     # Get experiment configuration
     config = get_experiment_config(experiment_type, experiment_name)
-    
+
     # Setup output directory
     base_dir = Path("experiment_results")
-    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     output_dir = base_dir / f"{experiment_type}_{experiment_name}_{timestamp}"
     output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -188,14 +189,14 @@ def run_experiment(
                 model_size,
                 test_cases,
                 config["system"],
-                get_experiment_config("params", "default")
+                get_experiment_config("params", "default"),
             )
         else:  # params experiment
             results[model_size] = run_model_evaluation(
                 model_size,
                 test_cases,
                 get_experiment_config("prompt", "CoT_few_shot")["system"],
-                config
+                config,
             )
 
     # Save results and create visualizations
@@ -203,12 +204,12 @@ def run_experiment(
         "experiment_name": f"{experiment_type}: {experiment_name}",
         "experiment_type": experiment_type,
         "configuration": config,
-        "sample_size": sample_size
+        "sample_size": sample_size,
     }
-    
+
     save_experiment_results(results, experiment_info, output_dir)
     create_experiment_visualizations(output_dir)
-    
+
     logger.info(f"\nExperiment completed. Results saved in: {output_dir}")
 
 
@@ -218,18 +219,16 @@ def main():
         "--type",
         choices=["prompt", "params"],
         required=True,
-        help="Type of experiment to run"
+        help="Type of experiment to run",
     )
     parser.add_argument(
-        "--name",
-        required=True,
-        help="Name of the experiment configuration"
+        "--name", required=True, help="Name of the experiment configuration"
     )
     parser.add_argument(
         "--sample-size",
         type=int,
         default=100,
-        help="Number of samples to use (default: 100)"
+        help="Number of samples to use (default: 100)",
     )
 
     args = parser.parse_args()

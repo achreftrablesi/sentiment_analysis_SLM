@@ -2,8 +2,8 @@
 Inference module for the sentiment analysis project.
 """
 
-from src.models import load_model
 from src.config import CLASSIFIER_PROMPT_0_5B, TEMPERATURE, USER_PROMPT, logger
+from src.models import load_model
 
 
 def run_inference(model, messages):

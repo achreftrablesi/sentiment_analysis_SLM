@@ -19,6 +19,8 @@ MODEL_FILENAME = {
     "1.5B": "Qwen2.5-1.5B-Instruct-Q5_K_M.gguf",
 }
 
+# Model Mapping
+MODEL_MAPPING = {"Fast & Compact (0.5B)": "0.5B", "Strong & Capable (1.5B)": "1.5B"}
 
 # Configure logging
 logging.basicConfig(

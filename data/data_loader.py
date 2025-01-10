@@ -3,7 +3,8 @@ Data loader for the sentiment analysis project.
 
 """
 
-from datasets import load_dataset, concatenate_datasets
+from datasets import concatenate_datasets, load_dataset
+
 from src.config import DATASET_PATH, logger
 
 
@@ -16,7 +17,11 @@ def load_dataset_subset(size: int = 1000):
     """
     size_per_label = size // 2
     # Load the dataset
-    dataset = load_dataset(DATASET_PATH)
+    try:
+        dataset = load_dataset(DATASET_PATH)
+    except Exception as e:
+        logger.error(f"Error loading the dataset: {e}")
+        raise
     reviews = dataset["train"]
 
     # Separate positive and negative reviews

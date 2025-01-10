@@ -3,10 +3,12 @@ Models module for the sentiment analysis project.
 """
 
 import argparse
-from llama_cpp import Llama
+
 from huggingface_hub import hf_hub_download
-from src.config import logger, n_ctx
-from src.config import MODEL_REPO, MODEL_FILENAME
+from llama_cpp import Llama
+
+from src.config import MODEL_FILENAME, MODEL_REPO, logger, n_ctx
+
 
 def download_model_file(repo_id: str, filename: str) -> str:
     """
@@ -41,7 +43,7 @@ def load_model(size: str) -> Llama:
     """
     model_repo = MODEL_REPO.get(size)
     filename = MODEL_FILENAME.get(size)
-    
+
     if not model_repo or not filename:
         raise ValueError("Invalid model size. Choose either '0.5B' or '1.5B'.")
 
@@ -49,9 +51,13 @@ def load_model(size: str) -> Llama:
 
     # Load the model using the downloaded file
     logger.info(f"Loading model from {model_file_path} with context window {n_ctx}")
-    model = Llama(model_path=model_file_path, verbose=False, n_ctx=n_ctx)
-    logger.info("Model loaded successfully")
-    return model
+    try:
+        model = Llama(model_path=model_file_path, verbose=False, n_ctx=n_ctx)
+        logger.info("Model loaded successfully")
+        return model
+    except Exception as e:
+        logger.error(f"Error loading the model: {e}")
+        raise
 
 
 def parse_args() -> argparse.Namespace:
@@ -78,6 +84,6 @@ if __name__ == "__main__":
     args = parse_args()
     try:
         model = load_model(args.size)
-        print(model)
+        logger.info(model)
     except Exception as e:
         logger.error(f"Error loading the model: {e}")

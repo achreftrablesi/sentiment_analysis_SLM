@@ -1,11 +1,12 @@
 """
 Evaluation module for the sentiment analysis project.
 """
-from typing import List, Dict
-from time import time
 from dataclasses import dataclass
 from statistics import mean, stdev
+from typing import Dict, List
+
 from sklearn.metrics import accuracy_score, confusion_matrix
+
 from src.config import logger
 
 
