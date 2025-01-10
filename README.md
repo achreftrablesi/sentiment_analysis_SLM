@@ -36,7 +36,7 @@ This repository contains a project for analyzing movie reviews' sentiment using 
 - **`src/config.py`**: Stores configuration settings like prompts, model repositories, and inference parameters.
 - **`src/evaluation.py`**: Provides methods to compute metrics such as accuracy, confusion matrix, and response time.
 - **`src/inference.py`**: Implements inference logic for the sentiment analysis task. It processes input reviews using the selected model and returns predictions.
-- **`src/models.py`**: Contains functions to load and initialize the Qwen2.5 models with specified context windows and parameters.
+- **`src/models.py`**: Contains functions to download and initialize the Qwen2.5 models with specified context windows and parameters.
 - **`main.py`**: A Streamlit-based web interface for users to interact with the models and analyze review sentiments.
 - **`requirements.txt`**: Lists the Python libraries required to run the project.
 - **`run.sh`**: A setup and execution script for initializing the environment and launching the app.
@@ -92,13 +92,13 @@ This repository contains a project for analyzing movie reviews' sentiment using 
    python -m src.models --size 0.5B
    python -m src.models --size 1.5B
    ```
-   **Note**: Loading the models will take time during the first run, but subsequent runs will be faster.
-   
+   **Note**: Loading the models will take time during the first run, but subsequent runs will be much faster.
+
 5. Run the Streamlit app: ( for future runs, you only need to run this command)
    ```bash
    streamlit run main.py
    ```
-
+   **Note**: this project can run locally on your machine without internet connection.
 ---
 
 ## Usage
