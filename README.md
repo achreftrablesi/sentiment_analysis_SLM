@@ -93,7 +93,8 @@ This repository contains a project for analyzing movie reviews' sentiment using 
    python -m src.models --size 1.5B
    ```
    **Note**: Loading the models will take time during the first run, but subsequent runs will be faster.
-5. Run the Streamlit app:
+   
+5. Run the Streamlit app: ( for future runs, you only need to run this command)
    ```bash
    streamlit run main.py
    ```
