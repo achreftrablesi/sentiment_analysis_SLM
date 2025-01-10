@@ -2,3 +2,4 @@ scikit-learn
 llama-cpp-python
 datasets
 streamlit
+huggingface-hub
