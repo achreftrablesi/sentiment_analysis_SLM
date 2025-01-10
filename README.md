@@ -109,6 +109,10 @@ Once the Streamlit app is running, you can:
 - Enter a movie review in the provided text area.
 - View the sentiment analysis result.
 
+### UI example
+
+Visit this [link](https://youtu.be/aB69MRiEtIQ) to see the UI in action.
+
 ### Running Experiments
 To run experiments comparing models or configurations, use:
 ```bash
