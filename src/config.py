@@ -13,6 +13,12 @@ MODEL_REPO = {
     "1.5B": "bartowski/Qwen2.5-1.5B-Instruct-GGUF",
 }
 
+# Model Filename
+MODEL_FILENAME = {
+    "0.5B": "Qwen2.5-0.5B-Instruct-Q5_K_M.gguf",
+    "1.5B": "Qwen2.5-1.5B-Instruct-Q5_K_M.gguf",
+}
+
 
 # Configure logging
 logging.basicConfig(
