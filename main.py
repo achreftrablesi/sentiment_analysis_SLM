@@ -17,10 +17,16 @@ from src.config import (
 from src.models import load_model
 
 
-def analyze_sentiment(model_size: str, text: str) -> str:
-    """Run sentiment analysis on a single review."""
-    # Select the appropriate prompt based on model size
-    classifier_prompt = (
+def analyze_sentiment(model_size: str, text: str, custom_prompt: str = None) -> str:
+    """Run sentiment analysis on a single review.
+    
+    Args:
+        model_size: Size of the model to use
+        text: Review text to analyze
+        custom_prompt: Optional custom system prompt
+    """
+    # Select the appropriate prompt based on model size or use custom prompt
+    classifier_prompt = custom_prompt if custom_prompt else (
         CLASSIFIER_PROMPT_1_5B
         if MODEL_MAPPING[model_size] == "1.5B"
         else CLASSIFIER_PROMPT_0_5B
@@ -83,6 +89,17 @@ def main():
             help="Choose between a faster but simpler model or a more capable but slower one",
         )
 
+        # Add prompt customization option
+        use_custom_prompt = st.checkbox("Use custom prompt", help="Toggle to use your own custom prompt instead of the default")
+        custom_prompt = None
+        if use_custom_prompt:
+            custom_prompt = st.text_area(
+                "Enter custom prompt:",
+                height=150,
+                placeholder="Enter your custom system prompt here...",
+                help="This prompt will be used to instruct the model how to analyze the sentiment",
+            )
+
         # Review input
         review = st.text_area(
             "Enter movie review:",
@@ -95,7 +112,7 @@ def main():
         if review:
             try:
                 with st.spinner("Analyzing sentiment..."):
-                    sentiment = analyze_sentiment(model_size, review)
+                    sentiment = analyze_sentiment(model_size, review, custom_prompt)
                 st.markdown(
                     f"""
                     <div class="sentiment-result">
