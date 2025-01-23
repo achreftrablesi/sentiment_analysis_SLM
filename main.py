@@ -8,9 +8,9 @@ import streamlit as st
 from src.config import (
     CLASSIFIER_PROMPT_0_5B,
     CLASSIFIER_PROMPT_1_5B,
-    MAX_TOKENS,
     MODEL_MAPPING,
     TEMPERATURE,
+    MAX_TOKENS,
     USER_PROMPT,
     logger,
 )
