@@ -14,30 +14,54 @@ from experiments.plot_metrics import create_experiment_visualizations
 from src.config import logger
 from src.evaluation import PredictionResult, evaluate_model_performance
 from src.models import load_model
+from experiments.chain import (
+    summary_chain, 
+    confidence_chain, 
+    sarcasm_chain,
+    decomposition_chain,
+    decomposition_deterministic_chain
+)
 
 
 def validate_prediction(prediction: str) -> str:
     """
-    Validate that the model prediction is exactly 'positive' or 'negative'.
+    Validate and extract sentiment from model prediction.
 
     Args:
-        prediction: Raw model prediction
+        prediction: Raw model prediction - either a single word ('positive'/'negative') 
+                   or structured format with sentiment, confidence, and explanation
 
     Returns:
-        Validated prediction ('positive' or 'negative')
+        Validated sentiment ('positive' or 'negative')
 
     Raises:
-        ValueError: If prediction is not exactly 'positive' or 'negative'
+        ValueError: If prediction is not a valid sentiment
     """
-    prediction = prediction.strip().lower()
-
-    if prediction not in {"positive", "negative"}:
+    try:
+        # Clean up prediction
+        prediction = prediction.strip().lower()
+        
+        # If it's a single word response
+        if prediction in {"positive", "negative"}:
+            return prediction
+            
+        # If it's structured format, parse it
+        lines = [line.strip() for line in prediction.split('\n') if line.strip()]
+        
+        # Extract sentiment from first line
+        sentiment_line = lines[0].lower()
+        if "sentiment:" in sentiment_line.lower():
+            sentiment = sentiment_line.split("sentiment:")[1].strip().strip('"').strip('*')
+            if sentiment in {"positive", "negative"}:
+                return sentiment
+                
         raise ValueError(
-            f"Invalid prediction: '{prediction}'. "
-            "Prediction must be exactly 'positive' or 'negative'"
+            f"Invalid sentiment: '{prediction}'. "
+            "Must be exactly 'positive' or 'negative'"
         )
 
-    return prediction
+    except (IndexError, ValueError) as e:
+        raise ValueError(f"Invalid prediction format: {str(e)}")
 
 
 def run_model_evaluation(
@@ -55,16 +79,53 @@ def run_model_evaluation(
 
         start_time = time()
         try:
-            response = model.create_chat_completion(
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": case["input"]},
-                ],
-                **{k: v for k, v in inference_params.items() if k != "description"},
-            )
-            inference_time = time() - start_time
+            # Check if using chain prompts
+            if isinstance(system_prompt, dict) and "chain_type" in system_prompt:
+                if system_prompt["chain_type"] == "summary":
+                    raw_prediction = summary_chain(
+                        model,
+                        case["input"],
+                        system_prompt["summary_prompt"],
+                        system_prompt["classification_prompt"]
+                    )
+                elif system_prompt["chain_type"] == "confidence":
+                    raw_prediction = confidence_chain(
+                        model,
+                        case["input"],
+                        system_prompt["student_prompt"],
+                        system_prompt["teacher_prompt"]
+                    )
+                elif system_prompt["chain_type"] == "sarcasm":
+                    raw_prediction = sarcasm_chain(
+                        model,
+                        case["input"],
+                        system_prompt["sarcasm_prompt"],
+                        system_prompt["classification_prompt"]
+                    )
+                elif system_prompt["chain_type"] == "decomposition":
+                    raw_prediction = decomposition_chain(
+                        model,
+                        case["input"],
+                        system_prompt["extract_prompt"],
+                        system_prompt["classification_prompt"]
+                    )
+                elif system_prompt["chain_type"] == "decomposition_deterministic":
+                    raw_prediction = decomposition_deterministic_chain(
+                        model,
+                        case["input"],
+                        system_prompt["extract_prompt"]
+                    )
+            else:
+                response = model.create_chat_completion(
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": case["input"]},
+                    ],
+                    **{k: v for k, v in inference_params.items() if k != "description"},
+                )
+                raw_prediction = response["choices"][0]["message"]["content"]
 
-            raw_prediction = response["choices"][0]["message"]["content"]
+            inference_time = time() - start_time
 
             try:
                 prediction = validate_prediction(raw_prediction)
@@ -157,7 +218,7 @@ def run_experiment(experiment_type: str, experiment_name: str, sample_size: int)
     Run a specific experiment configuration.
 
     Args:
-        experiment_type: Type of experiment ('prompt' or 'params')
+        experiment_type: Type of experiment ('prompt', 'params', or 'chain')
         experiment_name: Name of the specific experiment configuration
         sample_size: Number of samples to use
     """
@@ -183,13 +244,23 @@ def run_experiment(experiment_type: str, experiment_name: str, sample_size: int)
 
     # Run experiment
     results = {}
+    inference_params = get_experiment_config("params", "default")
+    
     for model_size in ["0.5B", "1.5B"]:
-        if experiment_type == "prompt":
+        if experiment_type == "chain":
+            # For chain experiments, we pass the chain config directly
+            results[model_size] = run_model_evaluation(
+                model_size,
+                test_cases,
+                config,  # This contains the chain configuration
+                inference_params,
+            )
+        elif experiment_type == "prompt":
             results[model_size] = run_model_evaluation(
                 model_size,
                 test_cases,
                 config["system"],
-                get_experiment_config("params", "default"),
+                inference_params,
             )
         else:  # params experiment
             results[model_size] = run_model_evaluation(
@@ -217,7 +288,7 @@ def main():
     parser = argparse.ArgumentParser(description="Run sentiment analysis experiments")
     parser.add_argument(
         "--type",
-        choices=["prompt", "params"],
+        choices=["prompt", "params", "chain"],  # Add 'chain' as an option
         required=True,
         help="Type of experiment to run",
     )
