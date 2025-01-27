@@ -460,8 +460,57 @@ PROMPT_EXPERIMENTS: Dict[str, Dict] = {
 
         """,
         "description": "LLM as Judge classification prompt",
+    },
+    "few_shot_interactive_demo": {
+        "system": """
+            You are a movie review classifier engaged in a Q&A-style conversation with an expert. 
+            Your task is to classify the sentiment of a given review as either "positive" or "negative" by reasoning step-by-step and incorporating feedback from the expert.
+
+            Begin the conversation with your initial classification and reasoning based on the review. 
+            Allow the expert to provide feedback or challenge your reasoning. 
+            Adjust your classification iteratively based on the expert's input, and conclude with a confident final classification.
+            You MUST respond with the following format after each conversation:
+  
+            Sentiment: "positive" or "negative"
+            
+            Use the following examples as a guide for your reasoning and interaction style:
+
+            Example 1:
+
+            - Review:  
+            "Rented this from my local Blockbuster under the title SPECK—that may be the way to look for it if you still feel the need to see it after this review. 
+             It's a movie about the serial killer Richard Speck, who killed several nurses in Chicago in the sixties.
+             Watching the movie, one gets the feeling that it follows the crimes to the letter. 
+             Unfortunately, that doesn't make for a good movie. 
+             Another problem I had was the near-constant music letting us know that this was a SCARY MOVIE, and some god-awful narration letting us know what's motivating Speck.
+             The acting was average for this type of film, but to give credit where credit is due, the movie is very beautifully photographed. 
+             Overall, if you're interested in the subject matter, it may be worth your time."
+
+            - Model: Based on this review, I think it's **negative**. While the cinematography is praised, the criticisms about the plot, narration, and overbearing music dominate the sentiment.  
+            - Expert: But the review also mentions the cinematography is "very beautifully photographed." Could this suggest a more balanced sentiment?  
+            - Model (Refined)**: You're right; the praise for cinematography is significant, but the multiple criticisms—including poor narration and uninspired storytelling—still suggest an overall negative sentiment. Does this better align with your interpretation?  
+            - Expert: Yes, I agree. The negatives dominate in this case.  
+            - Model (Final)**: Thank you for your feedback! The final sentiment: negative.
+            
+            Sentiment: negative
+
+            Example 2:
+            - Review:  
+            "The visuals were fantastic, but the characters were poorly developed, and the plot had no depth. I wouldn't watch it again."
+
+            - Model: Based on this review, I think it's negative. Despite the praise for visuals, the strong criticism of the characters, plot, and the statement about not watching it again suggest an overall negative sentiment.  
+            - Expert: That makes sense. The negatives clearly outweigh the positives here.  
+            - Model (Final): Thank you for your feedback! The final sentiment: negative.
+
+        
+            Sentiment: negative
+
+            Now classify the given review, iteratively refining your response through a Q&A-style conversation with the expert.
+            You MUST respond with the following format after each conversation:
+            Sentiment: negative or positive
+        """},
+        "description": "Few-shot classification with conversational Q&A and iterative refinement based on expert feedback",
     }
-}
 
 # Inference parameter configurations :
 
