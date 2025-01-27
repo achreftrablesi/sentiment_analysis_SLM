@@ -207,13 +207,15 @@ PROMPT_EXPERIMENTS: Dict[str, Dict] = {
         - "The plot was so intreging that I only needed a 10 minute to know the killer!", clearly sarcastic with negative connotation.
         Answer: negative
 
-        You ONLY need to provide the final label one word ONLY, either "positive" or "negative".
+        You ONLY need to provide the final output in the following format:
+        Sentiment: "positive" or "negative"
         """,
         "description": "Chain of Thought with edge cases",
     },
     "ToT": {
         "system": """
-        You are three different experts—Expert A, Expert B, and Expert C—who must classify the overall sentiment of a movie review. 
+        In Order to classify the sentiment of a movie review, you are three different experts—Expert A, Expert B, 
+        and Expert C—who must classify the overall sentiment of a movie review. 
         All three experts will:
 
         1. Take turns sharing one short step of their reasoning.
@@ -221,7 +223,8 @@ PROMPT_EXPERIMENTS: Dict[str, Dict] = {
         3. If any expert realizes their own reasoning is flawed, that expert quietly leaves the discussion.
 
         Continue in sequential "rounds" until you reach a final consensus. 
-        Provide the final sentiment label as one word ONLY: "positive" or "negative".
+        Provide the final output in the following format:
+        Sentiment: "positive" or "negative"
 
         Step-by-Step Instructions
 
@@ -242,7 +245,9 @@ PROMPT_EXPERIMENTS: Dict[str, Dict] = {
         - Do not remove other experts; only remove yourself if you think you're incorrect.  
         - End with exactly one consensus label: "positive" or "negative". 
        
-        Begin now and provide ONLY the final label one word ONLY, either "positive" or "negative", nothing else.
+        Begin now and provide the final output in the following format:
+
+        Sentiment: "positive" or "negative"
                 """,
         "description": "Tree of Thought classification prompt",
     },
@@ -276,7 +281,7 @@ PROMPT_EXPERIMENTS: Dict[str, Dict] = {
         """,
         "description": "Iterative classification prompt with confidence",
     },
-    "iterative_with_general_knowledge": {
+    "general_knowledge": {
         "system": """
         You are a movie review classifier. You have access to general knowledge about movies, including their reception, directors, actors, and the general public's opinions.
 
@@ -359,6 +364,102 @@ PROMPT_EXPERIMENTS: Dict[str, Dict] = {
         Sentiment: negative
         """,
         "description": "Iterative classification prompt with decomposition",
+    },
+    "LLM_as_Judge":{
+        "system": """
+        You are an expert movie critic trained to evaluate reviews and assign a **1-to-5 star rating** based on your understanding of how IMDb reviews are written. 
+        a review can be ONLY positive or negative.
+        Only respond with the following format:
+        rating: int (1-5),
+        sentiment: "positive" or "negative"
+        
+        Your task is to:
+        1. Analyze the review for key aspects that IMDb reviewers typically emphasize.
+        2. Assign a **1-to-5 star rating** based on the review's tone, details, and overall impression.
+        3. Use the assigned rating to classify the sentiment:
+        - Positive Sentiment: For ratings 4 or 5 stars.
+        - Negative Sentiment: For ratings 1, 2, or 3 stars.
+
+        Evaluation Criteria:
+
+        Consider the following aspects while interpreting the review:
+        1. Story and Plot: Is the story engaging, coherent, and well-executed?
+        2. Acting and Characters: Are the performances strong, and are the characters well-developed?
+        3. Direction and Production Quality: Does the movie excel in direction, cinematography, and overall production value?
+        4. Emotional Impact and Viewer Engagement: Does the movie evoke strong emotions or leave a lasting impression?
+
+        Scoring System:
+        1. Read the review carefully, identify the tone, and extract relevant details.
+        2. Based on the review, assign a 1-to-5 star rating:
+        - 1 Star: The review is highly negative with no redeeming qualities mentioned. Sentiment: negative
+        - 2 Stars: The review is mostly negative with minimal positive aspects. Sentiment: negative
+        - 3 Stars: The review is mixed but leaning towards negative. Sentiment: negative
+        - 4 Stars: The review is mostly positive with minor issues. Sentiment: positive
+        - 5 Stars: The review is overwhelmingly positive with no major flaws. Sentiment: positive
+
+        3. Provide the final sentiment based on the rating.
+
+        Output Format:
+        rating: int (1-5),
+        sentiment: "positive" or "negative"
+
+
+        """,
+    },
+    "LLM_as_Judge_with_few_shots":{
+        "system": """
+        You are an expert movie critic trained to evaluate reviews and assign a **1-to-5 star rating** based on your understanding of how IMDb reviews are written. 
+        Your task is to:
+        1. Analyze the review for key aspects that IMDb reviewers typically emphasize.
+        2. Assign a **1-to-5 star rating** based on the review's tone, details, and overall impression.
+        3. Use the assigned rating to classify the sentiment:
+        - Positive Sentiment: For ratings 4 or 5 stars.
+        - Negative Sentiment: For ratings 1, 2, or 3 stars.
+
+        Evaluation Criteria:
+
+        Consider the following aspects while interpreting the review:
+        1. Story and Plot: Is the story engaging, coherent, and well-executed?
+        2. Acting and Characters: Are the performances strong, and are the characters well-developed?
+        3. Direction and Production Quality: Does the movie excel in direction, cinematography, and overall production value?
+        4. Emotional Impact and Viewer Engagement: Does the movie evoke strong emotions or leave a lasting impression?
+
+        Scoring System:
+        1. Read the review carefully, identify the tone, and extract relevant details.
+        2. Based on the review, assign a **1-to-5 star rating**:
+        - 1 Star: The review is highly negative with no redeeming qualities mentioned. Sentiment: negative
+        - 2 Stars: The review is mostly negative with minimal positive aspects. Sentiment: negative
+        - 3 Stars: The review is mixed but leaning towards negative. Sentiment: negative
+        - 4 Stars: The review is mostly positive with minor issues. Sentiment: positive
+        - 5 Stars: The review is overwhelmingly positive with no major flaws. Sentiment: positive
+
+        3. Provide the final sentiment based on the rating.
+
+        Output Format:
+        rating: int (1-5),
+        sentiment: "positive" or "negative"
+
+        Example:
+
+        Review:
+        Rented this from my local Blockbuster under the title SPECK - 
+        that may be the way to look for it if you still feel the need to see it after this review.
+        It's a movie about the serial killer Richard Speck, who killed several nurses in Chicago in the sixties. 
+        Watching the movie, one gets the feeling that it follows the crimes to the letter. 
+        Unfortunately, that doesn't make for a good movie.
+        Another problem I had was the near-constant music letting us know that this was a SCARY MOVIE, 
+        and some god-awful narration letting us know what's motivating Speck. 
+        The acting was average for this type of film; to give credit where credit is due, 
+        the movie is very beautifully photographed for my taste. Your mileage may vary.
+        Over all, if you're interested in the subject matter, it may be worth your time.
+
+        Judge Response:
+
+        rating: 2
+        sentiment: negative
+
+        """,
+        "description": "LLM as Judge classification prompt",
     }
 }
 
@@ -449,30 +550,69 @@ CHAIN_EXPERIMENTS: Dict[str, Dict] = {
         """,
         "description": "Two-step chain: aspect decomposition followed by weighted classification",
     },
-    "sarcasm": {
-    "chain_type": "sarcasm",
-    "sarcasm_prompt": """
-    You are an expert in detecting sarcasm and irony in text. Analyze this movie review carefully, keeping in mind that sarcasm is a rare occurrence and should not be assumed without clear indicators. Your task is to:
-    1. Identify any sarcastic or ironic statements.
-    2. Determine if the overall tone of the review is sarcastic.
-    3. Extract specific examples of sarcasm, if present.
+    "star_rating": {
+        "chain_type": "star_rating",
+        "rating_prompt": """
+        You are an expert movie critic trained to evaluate reviews and assign a **1-to-5 star rating** based on your understanding of how IMDb reviews are written. 
+        a review can be positive, negative, or mixed.
+        
+        Only respond with the following format:
+        rating: int (1-5),
+        sentiment: "positive" or "negative" or "mixed"
+        
+        Your task is to:
+        1. Analyze the review for key aspects that IMDb reviewers typically emphasize.
+        2. Assign a **1-to-5 star rating** based on the review's tone, details, and overall impression.
+        3. Use the assigned rating to classify the sentiment:
+        - Positive Sentiment: For ratings 4 or 5 stars.
+        - Negative Sentiment: For ratings 1, 2,.
+        - Mixed Sentiment: For ratings 3 stars.
+        Evaluation Criteria:
 
-    Format your response exactly as:
-    Is_Sarcastic: [yes/no]
-    Examples: [List specific sarcastic phrases or 'none' if no sarcasm is detected]
-    """,
-    "classification_prompt": """
-    You are a movie review classifier. This review has been analyzed for sarcasm, and any detected sarcasm is highlighted for your reference.
-    When determining sentiment:
-    - Consider the true meaning behind sarcastic statements, as sarcastic positive phrases often indicate negative sentiment, and vice versa.
-    - Keep in mind that sarcasm is rare and should only influence your decision when explicitly detected.
+        Consider the following aspects while interpreting the review:
+        1. Story and Plot: Is the story engaging, coherent, and well-executed?
+        2. Acting and Characters: Are the performances strong, and are the characters well-developed?
+        3. Direction and Production Quality: Does the movie excel in direction, cinematography, and overall production value?
+        4. Emotional Impact and Viewer Engagement: Does the movie evoke strong emotions or leave a lasting impression?
 
-    Only respond with 'positive' or 'negative'.
-    """,
-    "description": "Two-step chain: sarcasm detection followed by informed classification, with emphasis on the rarity of sarcasm."
+        Scoring System:
+        1. Read the review carefully, identify the tone, and extract relevant details.
+        2. Based on the review, assign a 1-to-5 star rating:
+        - 1 Star: The review is highly negative with no redeeming qualities mentioned. Sentiment: negative
+        - 2 Stars: The review is mostly negative with minimal positive aspects. Sentiment: negative
+        - 3 Stars: The review is mixed but leaning towards negative. Sentiment: mixed
+        - 4 Stars: The review is mostly positive with minor issues. Sentiment: positive
+        - 5 Stars: The review is overwhelmingly positive with no major flaws. Sentiment: positive
+
+        3. Provide the final sentiment based on the rating.
+
+        Output Format:
+        rating: int (1-5),
+        sentiment: "positive" or "negative" or "mixed"
+        """,
+        "resolution_prompt": """
+        You are an expert film critic specializing in resolving mixed or ambiguous reviews.
+        For reviews that show both positive and negative aspects, carefully weigh the following:
+
+        1. Impact of Criticisms:
+        - Are the negative points deal-breakers or minor issues?
+        - Do they significantly impact the overall viewing experience?
+
+        2. Strength of Praise:
+        - Is the positive feedback substantial or superficial?
+        - Do the positive aspects outweigh the negative ones?
+
+        3. Reviewer's Tone:
+        - Does the overall tone lean more towards recommendation or warning?
+        - What's the final impression the reviewer wants to convey?
+
+        Based on these factors, classify the review as either 'positive', 'negative'
+        Only respond with exactly one word: either 'positive', 'negative'
+        """,
+        "description": "Two-step chain: star rating followed by resolution of mixed ratings",
+    },
 }
 
-}
 
 def get_experiment_config(experiment_type: str, experiment_name: str) -> Dict:
     """
