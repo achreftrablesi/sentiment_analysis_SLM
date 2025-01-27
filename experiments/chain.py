@@ -274,21 +274,122 @@ def decomposition_deterministic_chain(
     logger.info("Finished aspect extraction")
 
     # Parse aspects and count
-    lines = [line.strip() for line in aspects.split('\n') if line.strip()]
     positive_count = 0
     negative_count = 0
 
-    for line in lines:
-        if line.lower().startswith("positive:"):
-            # Split the line and count non-empty items after "Positive:"
-            items = [item.strip() for item in line.split(":", 1)[1].split(",")]
-            positive_count = sum(1 for item in items if item)
-        elif line.lower().startswith("negative:"):
-            # Split the line and count non-empty items after "Negative:"
-            items = [item.strip() for item in line.split(":", 1)[1].split(",")]
-            negative_count = sum(1 for item in items if item)
+    # Split into lines and process each line
+    for line in aspects.lower().split('\n'):
+        line = line.strip()
+        if line.startswith('positive:'):
+            # Get everything after "positive:" and split by commas
+            aspects_list = line[len('positive:'):].strip().split(',')
+            # Count non-empty aspects
+            positive_count = sum(1 for aspect in aspects_list if aspect.strip())
+        elif line.startswith('negative:'):
+            # Get everything after "negative:" and split by commas
+            aspects_list = line[len('negative:'):].strip().split(',')
+            # Count non-empty aspects
+            negative_count = sum(1 for aspect in aspects_list if aspect.strip())
 
-    # Determine sentiment based on counts
     logger.info(f"Counted aspects - Positive: {positive_count}, Negative: {negative_count}")
-    return "positive" if positive_count >= negative_count else "negative"
+    
+    # Determine sentiment based on counts
+    if positive_count == negative_count:
+        # In case of tie, default to negative
+        return "negative"
+    return "positive" if positive_count > negative_count else "negative"
+
+def star_rating_chain(
+    model: Any,
+    input_text: str,
+    rating_prompt: str,
+    resolution_prompt: str
+) -> str:
+    """
+    Execute a two-step chain: first assign a star rating, then resolve mixed ratings.
+
+    Args:
+        model: The language model instance
+        input_text: The review text to analyze
+        rating_prompt: Prompt for initial star rating classification
+        resolution_prompt: Prompt for resolving mixed ratings
+
+    Returns:
+        str: Final classification ('positive' or 'negative')
+    """
+    # Step 1: Get star rating
+    logger.info("Starting first pass: star rating classification")
+    rating_response = model.create_chat_completion(
+        messages=[
+            {"role": "system", "content": rating_prompt},
+            {"role": "user", "content": input_text}
+        ],
+        temperature=0.2
+    )
+    rating_result = rating_response["choices"][0]["message"]["content"]
+    logger.info(f"Star rating result: {rating_result}")
+    logger.info("Finished first pass: star rating assigned")
+
+    # Parse rating response
+    lines = [line.strip() for line in rating_result.split('\n') if line.strip()]
+    rating = None
+    sentiment = None
+
+    for line in lines:
+        line = line.lower()
+        # Handle rating line
+        if "rating:" in line:
+            try:
+                # Remove any commas and get the first number
+                rating_part = line.split("rating:")[1].replace(",", "").strip()
+                rating = int(rating_part.split()[0])  # Take first word and convert to int
+                if not 1 <= rating <= 5:
+                    rating = None
+            except (ValueError, IndexError):
+                logger.warning(f"Could not parse rating from line: {line}")
+        
+        # Handle sentiment line
+        elif "sentiment:" in line:
+            # Clean up the sentiment value
+            sentiment_part = (
+                line.split("sentiment:")[1]
+                .replace(",", "")  # Remove commas
+                .replace('"', "")  # Remove quotes
+                .strip()
+            )
+            if sentiment_part in {"positive", "negative"}:
+                sentiment = sentiment_part
+
+    # If we got a valid rating and it's not 3 stars, use the sentiment
+    if rating is not None and rating != 3 and sentiment in {"positive", "negative"}:
+        logger.info(f"Clear rating ({rating} stars), returning {sentiment}")
+        return sentiment
+
+    # Step 2: Resolve mixed (3-star) or unclear ratings
+    logger.info("Starting second pass: resolving mixed rating")
+    resolution_context = f"""
+    Review: {input_text}
+
+    Initial Analysis:
+    This review was rated as {'3 stars' if rating == 3 else 'unclear'}, indicating a mixed sentiment.
+    Please analyze whether this mixed review leans more positive or negative.
+    """
+    
+    resolution_response = model.create_chat_completion(
+        messages=[
+            {"role": "system", "content": resolution_prompt},
+            {"role": "user", "content": resolution_context}
+        ],
+        temperature=0.0
+    )
+    final_sentiment = resolution_response["choices"][0]["message"]["content"].strip().lower()
+    logger.info("Finished second pass: mixed rating resolved")
+
+    # Ensure final sentiment is valid
+    if final_sentiment not in {"positive", "negative"}:
+        # Default to negative if we can't determine sentiment
+        logger.warning(f"Invalid final sentiment: {final_sentiment}, defaulting to negative")
+        return "negative"
+
+    return final_sentiment
 
