@@ -320,7 +320,7 @@ PROMPT_EXPERIMENTS: Dict[str, Dict] = {
         """,    
         "description": "Iterative classification prompt with general knowledge",
     },
-    "iterative_with_decomposition": {
+    "aspect_decomposition": {
         "system": """
         You are a movie review classifier. Your task is to analyze the given review and classify its sentiment as either "positive" or "negative".
 
