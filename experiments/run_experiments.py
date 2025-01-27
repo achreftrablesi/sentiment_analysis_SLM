@@ -17,9 +17,8 @@ from src.models import load_model
 from experiments.chain import (
     summary_chain, 
     confidence_chain, 
-    sarcasm_chain,
     decomposition_chain,
-    decomposition_deterministic_chain
+    star_rating_chain
 )
 
 
@@ -29,8 +28,7 @@ def validate_prediction(prediction: str) -> str:
 
     Args:
         prediction: Raw model prediction - either a single word ('positive'/'negative') 
-                   or structured format with sentiment, confidence, and explanation
-
+                   or structured format
     Returns:
         Validated sentiment ('positive' or 'negative')
 
@@ -48,12 +46,16 @@ def validate_prediction(prediction: str) -> str:
         # If it's structured format, parse it
         lines = [line.strip() for line in prediction.split('\n') if line.strip()]
         
-        # Extract sentiment from first line
-        sentiment_line = lines[0].lower()
-        if "sentiment:" in sentiment_line.lower():
-            sentiment = sentiment_line.split("sentiment:")[1].strip().strip('"').strip('*')
-            if sentiment in {"positive", "negative"}:
-                return sentiment
+        # Check first and last lines for sentiment
+        lines_to_check = [lines[0]]
+        if len(lines) > 1:
+            lines_to_check.append(lines[-1])
+            
+        for line in lines_to_check:
+            if "sentiment:" in line.lower():
+                sentiment = line.split("sentiment:")[1].strip().strip('"').strip('*')
+                if sentiment in {"positive", "negative"}:
+                    return sentiment
                 
         raise ValueError(
             f"Invalid sentiment: '{prediction}'. "
@@ -95,13 +97,6 @@ def run_model_evaluation(
                         system_prompt["student_prompt"],
                         system_prompt["teacher_prompt"]
                     )
-                elif system_prompt["chain_type"] == "sarcasm":
-                    raw_prediction = sarcasm_chain(
-                        model,
-                        case["input"],
-                        system_prompt["sarcasm_prompt"],
-                        system_prompt["classification_prompt"]
-                    )
                 elif system_prompt["chain_type"] == "decomposition":
                     raw_prediction = decomposition_chain(
                         model,
@@ -109,11 +104,12 @@ def run_model_evaluation(
                         system_prompt["extract_prompt"],
                         system_prompt["classification_prompt"]
                     )
-                elif system_prompt["chain_type"] == "decomposition_deterministic":
-                    raw_prediction = decomposition_deterministic_chain(
+                elif system_prompt["chain_type"] == "star_rating":
+                    raw_prediction = star_rating_chain(
                         model,
                         case["input"],
-                        system_prompt["extract_prompt"]
+                        system_prompt["rating_prompt"],
+                        system_prompt["resolution_prompt"]
                     )
             else:
                 response = model.create_chat_completion(
