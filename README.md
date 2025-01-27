@@ -14,12 +14,14 @@ This repository contains a project for analyzing movie reviews' sentiment using 
 ├── experiments           # Experimentation scripts and configurations
 │   ├── experiment_configs.py # Definitions for various experiment configurations
 │   ├── plot_metrics.py       # Utilities for generating visualizations of experiment results
-│   └── run_experiments.py    # Script to automate experiments with different prompts and parameters
+│   ├── run_experiments.py    # Script to automate experiments with different prompts and parameters
+│   ├── save_misclassications.py # Script to save misclassications to a csv file
+│   ├── chain.py # Contains the chains used in the experiments
 ├── src                  # Core project files
 │   ├── config.py         # Configuration file for prompts, model settings, and logging
 │   ├── evaluation.py     # Evaluation functions for performance metrics and timing analysis
 │   ├── inference.py      # Script to run inference using predefined models and test messages
-│   └── models.py         # Contains model loading and initialization functions
+│   ├── models.py         # Contains model loading and initialization functions
 ├── .gitignore            # Git ignore file
 ├── main.py               # Streamlit app for interactive sentiment analysis
 ├── requirements.txt      # Python dependencies for the project
@@ -33,6 +35,8 @@ This repository contains a project for analyzing movie reviews' sentiment using 
 - **`experiments/experiment_configs.py`**: Holds configuration data for prompt engineering and inference parameter experiments.
 - **`experiments/plot_metrics.py`**: Generates visual comparisons (e.g., accuracy, timing) between models based on experimental results.
 - **`experiments/run_experiments.py`**: Automates running experiments with different prompts and inference settings.
+- **`experiments/save_misclassications.py`**: Saves misclassications to a csv file.
+- **`experiments/chain.py`**: Contains the chains used in the experiments.
 - **`src/config.py`**: Stores configuration settings like prompts, model repositories, and inference parameters.
 - **`src/evaluation.py`**: Provides methods to compute metrics such as accuracy, confusion matrix, and response time.
 - **`src/inference.py`**: Implements inference logic for the sentiment analysis task. It processes input reviews using the selected model and returns predictions.
@@ -118,11 +122,23 @@ To run experiments comparing models or configurations, use:
 ```bash
 python experiments/run_experiments.py --type <experiment-type> --name <experiment-name> --sample-size <sample-size>
 ```
-- `experiment-type`: `prompt` or `params`.
+- `experiment-type`: `prompt` or `params` or `chain`.
 - `experiment-name`: Name of the specific experiment configuration (e.g., `CoT_few_shot`).
 - `sample-size`: Number of samples to use (default: 100).
 
 Results and plots will be saved in the `experiment_results/` directory.
+
+### Analyzing Misclassifications
+To analyze and save misclassified examples to CSV, use:
+```bash
+python experiments/save_misclassifications.py --size <sample-size> --model <model-size> --experiment <experiment-name> --output <output-dir>
+```
+
+Arguments:
+- `--size`: Number of samples to analyze (default: 100)
+- `--model`: Model size to use ('0.5B' or '1.5B', default: '0.5B')
+- `--experiment`: Experiment configuration to use (choices: 'zero_shot', 'one_shot', 'few_shot', 'CoT', 'CoT_few_shot', default: 'zero_shot')
+- `--output`: Output directory for results (default: 'misclassification_analysis')
 
 ---
 
@@ -188,6 +204,11 @@ Here is a template of what the `results.json` file will look like after an exper
   "timestamp": "2025-01-09T12:24:51.359699"
 }
 ```
+Misclassification Results Example:
+
+| Review Text | True Label | Predicted Label | Response Time (s) | Experiment Type |
+|------------|------------|-----------------|-------------------|-----------------|
+| "Rented this ... worth your time." | negative | positive | 0.780 | CoT_few_shot |
 
 ---
 
@@ -196,4 +217,5 @@ For questions or further assistance, please contact the repository maintainer.
 
 ## Full Report
 
-For a comprehensive analysis, including insights, challenges, and detailed visualizations, please refer to the [full Report](https://docs.google.com/document/d/1An8ad5i0OgzOa-TYQeTW994Li8uH01QFndAKL6RWJXY/edit?usp=sharing).
+For a comprehensive analysis, including insights, challenges, and detailed visualizations, please refer to the [intial](https://docs.google.com/document/d/1An8ad5i0OgzOa-TYQeTW994Li8uH01QFndAKL6RWJXY/edit?usp=sharing)
+and [complementary](https://docs.google.com/document/d/1ww9OkA4jZakncicdNxym8w3Qgs5-UyNwLpFPVb2kUZ8/edit?usp=sharing) reports.
